@@ -1,0 +1,79 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: iotdevice-composition
+spec:
+  compositeTypeRef:
+    apiVersion: iot.example.com/v1alpha1
+    kind: XDevice
+  resources:
+    - name: iot-device-deployment
+      base:
+        apiVersion: kubernetes.crossplane.io/v1alpha2
+        kind: Object
+        metadata:
+          name: iot-device-{{.metadata.name}}
+          namespace: iot-namespace
+        spec:
+          forProvider:
+            manifest:
+              apiVersion: apps/v1
+              kind: Deployment
+              metadata:
+                name: iot-device-{{.metadata.name}}
+                namespace: iot-namespace
+              spec:
+                replicas: 1
+                selector:
+                  matchLabels:
+                    app: iot-device-{{.metadata.name}}
+                template:
+                  metadata:
+                    labels:
+                      app: iot-device-{{.metadata.name}}
+                  spec:
+                    containers:
+                      - name: iot-device
+                        image: zacken1999/iot-device:latest
+                        env:
+                          - name: MESSAGE_INTERVAL
+                            value: "15"
+                          - name: DEVICE_ID
+                            value: "Device_ID"
+          providerConfigRef:
+            name: provider-kubernetes
+      patches:
+        - fromFieldPath: "spec.parameters.replicas"
+          toFieldPath: "spec.forProvider.manifest.spec.replicas"
+        - fromFieldPath: "spec.parameters.interval"
+          toFieldPath: "spec.forProvider.manifest.spec.template.spec.containers[0].env[0].value"
+          transforms:
+            - type: string
+              string:
+                fmt: "%d"
+        - fromFieldPath: "metadata.name"
+          toFieldPath: "spec.forProvider.manifest.spec.template.spec.containers[0].env[1].value"
+        - fromFieldPath: "metadata.name"
+          toFieldPath: "metadata.name"
+          transforms:
+            - type: string
+              string:
+                fmt: "iot-device-%s"
+        - fromFieldPath: "metadata.name"
+          toFieldPath: "spec.forProvider.manifest.metadata.name"
+          transforms:
+            - type: string
+              string:
+                fmt: "iot-device-%s"
+        - fromFieldPath: "metadata.name"
+          toFieldPath: "spec.forProvider.manifest.spec.selector.matchLabels.app"
+          transforms:
+            - type: string
+              string:
+                fmt: "iot-device-%s"
+        - fromFieldPath: "metadata.name"
+          toFieldPath: "spec.forProvider.manifest.spec.template.metadata.labels.app"
+          transforms:
+            - type: string
+              string:
+                fmt: "iot-device-%s"

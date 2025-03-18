@@ -1,0 +1,9 @@
+apiVersion: iot.example.com/v1alpha1
+kind: XDeviceClaim
+metadata:
+  name: my-iot-device2
+  namespace: iot-namespace
+spec:
+  parameters:
+    replicas: 1
+    interval: 10
